@@ -264,11 +264,69 @@ function isInviteLocked($dbr, $character_id) {
     return $row['invited_at'] > (time() - 60 * 60 * 24);
 }
 
+function emailAssignedToSamePlayer($dbr, $mail, $character_id) {
+
+    global $cfg_core_api;
+    global $cfg_core_app_id;
+    global $cfg_core_app_secret;
+    global $cfg_user_agent;
+
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE email = :email AND account_status = :account_status');
+    $stm->bindValue(':email', $mail);
+    $stm->bindValue(':account_status', "Active");
+    if (!$stm->execute()) {
+	return false;
+    }
+    
+    $matched_core_character = false;
+    
+    $invite_data = $stm->fetchAll();
+    
+    if (empty($invite_data)) {
+        return true;
+    }
+    
+    foreach ($invite_data as $throwaway => $each_row) {
+
+        $character_id = (int)$character_id;
+        $core_request_url = $cfg_core_api . '/app/v1/characters/' . $character_id;
+        
+        $core_bearer = base64_encode($cfg_core_app_id . ':' . $cfg_core_app_secret);
+        
+        $core_options = ["http" => ["method" => "GET", "header" => "Authorization: Bearer " . $core_bearer]];
+        $core_context = stream_context_create($core_options);
+        $core_response = file_get_contents($core_request_url, false, $core_context);
+                    
+        $core_status_code = $http_response_header[0];
+
+        if ($core_status_code == "HTTP/1.1 200 OK"){
+            $characters_json = json_decode($core_response, true);
+            
+            foreach ($characters_json as $each_character){
+                $core_character_id = $each_character['id'];
+                if ($core_character_id == $each_row["character_id"]) {
+                    $matched_core_character = true;
+                }
+            }            
+        }
+        else {
+            error_log("Core error on $character_id: $core_status_code");
+            return false;
+        }
+    }
+    
+    return $matched_core_character;
+    
+}
 
 function invite($dbr, $mail) {
     global $cfg_user_agent, $cfg_slack_admin, $_SESSION;
 
     if (isInviteLocked($dbr, $_SESSION['character_id'])) {
+	return false;
+    }
+    
+    if (!emailAssignedToSamePlayer($dbr, $mail, $_SESSION['character_id'])) {
 	return false;
     }
 
@@ -432,58 +490,25 @@ function core_groups($full_character_id_array) {
     global $cfg_core_app_secret;
     global $cfg_user_agent;
 
-    $groups = array();
+    $groups = [];
 
     if (isset($cfg_core_api) and isset($cfg_core_app_id) and isset($cfg_core_app_secret)) {
         $core_bearer = base64_encode($cfg_core_app_id . ':' . $cfg_core_app_secret);
     
-        $core_curls = array();
-        $core_curl_multi = curl_multi_init();
-    
         foreach ($full_character_id_array as $character_id) {
             $character_id = (int)$character_id;
-            $curl = curl_init($cfg_core_api . '/app/v1/groups/' . $character_id);
-            curl_setopt_array($curl, array(
-                    CURLOPT_RETURNTRANSFER => true,
-                    CURLOPT_MAXREDIRS => 5,
-                    CURLOPT_TIMEOUT => 30,
-                    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-                    CURLOPT_USERAGENT => $cfg_user_agent,
-                    CURLOPT_HTTPHEADER => array(
-                        'Authorization: Bearer ' . $core_bearer
-                    ),
-                )
-            );
-            $core_curls[$character_id] = $curl;
-            curl_multi_add_handle($core_curl_multi, $curl);
-        }
+            $core_request_url = $cfg_core_api . '/app/v2/groups/' . $character_id;
+            
+            $core_options = ["http" => ["method" => "GET", "header" => "Authorization: Bearer " . $core_bearer]];
+            $core_context = stream_context_create($core_options);
+            $core_response = file_get_contents($core_request_url, False, $core_context);
+                        
+            $core_status_code = $http_response_header[0];
     
-        do
-        {
-            $mrc = curl_multi_exec($core_curl_multi, $active);
-        } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-    
-        while ($active && $mrc == CURLM_OK)
-        {
-            curl_multi_select($core_curl_multi);
-            do
-            {
-                $mrc = curl_multi_exec($core_curl_multi, $active);
-            } while ($mrc == CURLM_CALL_MULTI_PERFORM);
-        }
-    
-        if ($mrc != CURLM_OK) {
-            error_log("core curl_multi error: $mrc");
-            return false;
-        }
-    
-        foreach ($core_curls as $character_id => $core_curl){
-            $error = curl_error($core_curls[$character_id]);
-    
-            if ($error == ''){
-                $char_response = curl_multi_getcontent($core_curls[$character_id]);
-                $char_groups_json = json_decode($char_response, 1);
-                $char_groups = array();
+            if ($core_status_code == "HTTP/1.1 200 OK"){
+                $char_groups_json = json_decode($core_response, True);
+                $char_groups = [];
+                
                 foreach ($char_groups_json as $char_group){
                     $group_name = $char_group['name'];
                     $char_groups[] = $group_name;
@@ -491,12 +516,10 @@ function core_groups($full_character_id_array) {
                 $groups[$character_id] = implode(',', $char_groups);
             }
             else {
-                error_log("Core error on $character_id: $error");
+                error_log("Core error on $character_id: $core_status_code");
+                return False;
             }
-            curl_multi_remove_handle($core_curl_multi, $core_curls[$character_id]);
-            curl_close($core_curls[$character_id]);
         }
-        curl_multi_close($core_curl_multi);
     }
     return $groups;
 }
