@@ -1,0 +1,13 @@
+# quick setup for dev env:
+$ virtualenv -p python3 .venv
+$ source .venv/bin/activate
+$ pip install requests
+$ pip install mysql-connector-python
+$ pip install slackclient
+$ deactivate
+
+# run
+$ source .venv/bin/activate
+$ source ./.env
+$ python3 checker.py
+$ deactivate

@@ -19,25 +19,6 @@ function db_init()
     return $dbr;
 }
 
-/**
- * @param PDOStatement $stm
- * @param $code
- * @param $msg
- * @return bool
- */
-function db_exec($stm, $code, $msg)
-{
-    if (!$stm->execute()) {
-        $_SESSION['error_code'] = $code;
-        $_SESSION['error_message'] = $msg;
-        $arr = $stm->ErrorInfo();
-        error_log('SQL failure:' . $arr[0] . ':' . $arr[1] . ':' . $arr[2]);
-        return false;
-    }
-
-    return true;
-}
-
 // ------------------------------------------------------------------------
 
 function sstart()
@@ -129,17 +110,8 @@ function sendSlack($text, $receiver)
     $url = 'https://slack.com/api/chat.postMessage?' . 'token=' . urlencode($cfg_slack_token) .
         '&channel=' . urlencode($receiver) . '&text=' . urlencode($text) .
         '&as_user=false&username=' . urlencode($cfg_slack_botname);
-    //dp($url);
-    return file_get_contents($url, false, stream_context_create($options));
-}
 
-function dp($msg)
-{
-    $now = date('Y-m-d H:i:s');
-    print($now . ': ' . $msg);
-    if (strpos($msg, "\n") === FALSE) {
-        print("\n");
-    }
+    return file_get_contents($url, false, stream_context_create($options));
 }
 
 // ------------------------------------------------------------------------
@@ -243,7 +215,7 @@ function sso_update()
 
     // ---- Pull character
 
-    if (!$person = pull_character($dbr, $_SESSION['character_id'])) {
+    if (!$person = pull_character($_SESSION['character_id'])) {
         $_SESSION['error_code'] = 60;
         $_SESSION['error_message'] = 'Failed to update character.';
         return false;
@@ -413,6 +385,11 @@ function isVerifyCompleted($dbr, $character_id)
     return $row = $stm->fetch();
 }
 
+/**
+ * @param PDO $dbr
+ * @param $character_id
+ * @return array|bool
+ */
 function getLinkedCharacter($dbr, $character_id) {
 
     $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND slack_id IS NOT NULL');
@@ -427,12 +404,8 @@ function getLinkedCharacter($dbr, $character_id) {
         return false;
     }
 
-    foreach ($invite_data as $throwaway => $each_row) {
-        
-        $email_to_check = $each_row["email"];
-        
-    }
-    
+    $email_to_check = $invite_data[0]["email"];
+
     $stm = $dbr->prepare('SELECT * FROM invite WHERE email = :email AND slack_id IS NOT NULL');
     $stm->bindValue(':email', $email_to_check);
     if (!$stm->execute()) {
@@ -466,25 +439,13 @@ function getLinkedCharacter($dbr, $character_id) {
 // ------------------------------------------------------------------------
 
 /**
- * @param PDO $dbr
  * @param $character_id
  * @return array|bool
  */
-function pull_character($dbr, $character_id)
+function pull_character($character_id)
 {
-    #global $cfg_user_agent;
-
     $person = array();
 
-    /*$options = array(
-        'http' => array(
-            'method' => 'GET',
-            'header' => array(
-                'Host: api.eveonline.com',
-                'User-Agent: ' . $cfg_user_agent,
-            ),
-        ),
-    );*/
     $result = file_get_contents('https://esi.evetech.net/latest/characters/' . $character_id);
     if ($result) {
         $characterData = json_decode($result, true);
@@ -578,5 +539,3 @@ function hasSlackPermission($groups)
 
     return true;
 }
-
-?>

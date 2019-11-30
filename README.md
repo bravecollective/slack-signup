@@ -35,8 +35,4 @@ PHP, MySQL and a web server.
 
 - Set `$cfg_url_base` in webroot/config.php.
 - Set `$cfg_sql_url`, `$cfg_sql_user` and `$cfg_sql_pass` in webroot/config.php.
-- Create the database schema from `slack_signup.sql`, the `account` table is no longer needed.
-
-#### Cron
-
-cron.php is not used anymore, it's replaced by [slack_checks](slack_checks).
+- Create the database schema from `slack_signup.sql`.
