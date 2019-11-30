@@ -54,7 +54,15 @@ function sdestroy()
     $_SESSION = array();
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
+        setcookie(
+            session_name(),
+            '',
+            time() - 42000,
+            $params["path"],
+            $params["domain"],
+            $params["secure"],
+            $params["httponly"]
+        );
     }
     session_destroy();
 }
@@ -593,6 +601,9 @@ function core_groups($full_character_id_array)
 
 // ------------------------------------------------------------------------
 
+/**
+ * @deprecated
+ */
 function refresher()
 {
     refresher_slack();
@@ -600,6 +611,9 @@ function refresher()
     refresher_reminders();
 }
 
+/**
+ * @deprecated
+ */
 function refresher_slack()
 {
     global $cfg_user_agent, $cfg_slack_token;
@@ -677,6 +691,9 @@ function refresher_slack()
     return true;
 }
 
+/**
+ * @deprecated
+ */
 function refresher_characters()
 {
     $dbr = db_init();
@@ -702,6 +719,9 @@ function refresher_characters()
     return true;
 }
 
+/**
+ * @deprecated
+ */
 function refresher_reminders()
 {
     global $cfg_url_base, $cfg_slack_admin;

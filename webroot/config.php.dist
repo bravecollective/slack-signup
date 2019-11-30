@@ -17,7 +17,7 @@ $cfg_sql_user = '';
 $cfg_sql_pass = '';
 
 
-$cfg_slack_admin = ""; # SLACK ADMIN
+$cfg_slack_admin = ""; # Name of the channel to which messages should be sent.
 $cfg_slack_token = ""; # SLACK TOKEN
 $cfg_slack_botname = ""; # SLACK BOT NAME
 
