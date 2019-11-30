@@ -1,5 +1,7 @@
-<?php if (!defined('GUEST')) die('go away'); ?>
 <?php
+if (!defined('GUEST')) {
+    die('go away');
+}
 
 date_default_timezone_set('UTC');
 
