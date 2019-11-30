@@ -54,15 +54,7 @@ function sdestroy()
     $_SESSION = array();
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();
-        setcookie(
-            session_name(),
-            '',
-            time() - 42000,
-            $params["path"],
-            $params["domain"],
-            $params["secure"],
-            $params["httponly"]
-        );
+        setcookie(session_name(), '', time() - 42000, $params["path"], $params["domain"], $params["secure"], $params["httponly"]);
     }
     session_destroy();
 }
@@ -412,7 +404,7 @@ function invite($dbr, $mail)
  */
 function isVerifyCompleted($dbr, $character_id)
 {
-    $stm = $dbr->prepare('SELECT * FROM account WHERE character_id = :character_id');
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND slack_id IS NOT NULL');
     $stm->bindValue(':character_id', $character_id);
     if (!$stm->execute()) {
         return false;
@@ -421,51 +413,54 @@ function isVerifyCompleted($dbr, $character_id)
     return $row = $stm->fetch();
 }
 
-/**
- * @param PDO $dbr
- * @param $code
- * @return bool
- */
-function verify($dbr, $code)
-{
-    if (isVerifyCompleted($dbr, $_SESSION['character_id'])) {
-        return false;
-    }
+function getLinkedCharacter($dbr, $character_id) {
 
-    $stm = $dbr->prepare('SELECT * FROM account WHERE auth_code = :auth_code');
-    $stm->bindValue(':auth_code', $code);
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND slack_id IS NOT NULL');
+    $stm->bindValue(':character_id', $character_id);
     if (!$stm->execute()) {
         return false;
     }
-
-    if (!$row = $stm->fetch()) {
+    
+    $invite_data = $stm->fetchAll();
+    
+    if (empty($invite_data)) {
         return false;
     }
 
-    $stm = $dbr->prepare(
-        'UPDATE account 
-        SET character_id = :character_id, character_name = :character_name, corporation_id = :corporation_id, 
-            corporation_name = :corporation_name, alliance_id = :alliance_id, alliance_name = :alliance_name, 
-            core_tags = :core_tags, core_groups = :core_groups, core_perms = :core_perms, 
-            completed_at = :completed_at 
-        WHERE auth_code = :auth_code'
-    );
-    $stm->bindValue(':character_id', $_SESSION['character_id']);
-    $stm->bindValue(':character_name', $_SESSION['character_name']);
-    $stm->bindValue(':corporation_id', $_SESSION['corporation_id']);
-    $stm->bindValue(':corporation_name', $_SESSION['corporation_name']);
-    $stm->bindValue(':alliance_id', $_SESSION['alliance_id']);
-    $stm->bindValue(':alliance_name', $_SESSION['alliance_name']);
-    $stm->bindValue(':core_tags', $_SESSION['core_tags']);
-    $stm->bindValue(':core_groups', $_SESSION['core_groups']);
-    $stm->bindValue(':core_perms', $_SESSION['core_perms']);
-    $stm->bindValue(':completed_at', time());
-    $stm->bindValue(':auth_code', strtoupper($code));
+    foreach ($invite_data as $throwaway => $each_row) {
+        
+        $email_to_check = $each_row["email"];
+        
+    }
+    
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE email = :email AND slack_id IS NOT NULL');
+    $stm->bindValue(':email', $email_to_check);
     if (!$stm->execute()) {
         return false;
     }
+    
+    $link_data = $stm->fetchAll();
+    
+    if (empty($link_data)) {
+        return false;
+    }
+    
+    $time_to_beat = 0;
+    $linked_character_data = [];
 
-    return true;
+    foreach ($link_data as $throwaway => $each_row) {
+        
+        if ($each_row["invited_at"] > $time_to_beat) {
+            
+            $linked_character_data["character_link"] = "https://evewho.com/character/" . $each_row["character_id"];
+            $linked_character_data["character_name"] = $each_row["character_name"];
+            
+            $time_to_beat = $each_row["invited_at"];
+            
+        }
+    }
+    
+    return $linked_character_data;
 }
 
 // ------------------------------------------------------------------------
@@ -525,30 +520,6 @@ function pull_character($dbr, $character_id)
         return false;
     }
 
-    $stm = $dbr->prepare(
-        'UPDATE account 
-        SET character_name = :character_name, corporation_id = :corporation_id, corporation_name = :corporation_name, 
-            alliance_id = :alliance_id, alliance_name = :alliance_name, faction_id = :faction_id, 
-            faction_name = :faction_name, core_tags = :core_tags, core_groups = :core_groups, 
-            core_perms = :core_perms, updated_at = :updated_at 
-        WHERE character_id = :character_id'
-    );
-    $stm->bindValue(':character_id', $person['character_id']);
-    $stm->bindValue(':character_name', $person['character_name']);
-    $stm->bindValue(':corporation_id', $person['corporation_id']);
-    $stm->bindValue(':corporation_name', $person['corporation_name']);
-    $stm->bindValue(':alliance_id', $person['alliance_id']);
-    $stm->bindValue(':alliance_name', $person['alliance_name']);
-    $stm->bindValue(':faction_id', $person['faction_id']);
-    $stm->bindValue(':faction_name', $person['faction_name']);
-    $stm->bindValue(':core_tags', $person['core_tags']);
-    $stm->bindValue(':core_groups', $person['core_groups']);
-    $stm->bindValue(':core_perms', $person['core_perms']);
-    $stm->bindValue(':updated_at', time());
-    if (!$stm->execute()) {
-        return false;
-    }
-
     return $person;
 }
 
@@ -599,292 +570,6 @@ function core_groups($full_character_id_array)
     return $groups;
 }
 
-// ------------------------------------------------------------------------
-
-/**
- * @deprecated
- */
-function refresher()
-{
-    refresher_slack();
-    refresher_characters();
-    refresher_reminders();
-}
-
-/**
- * @deprecated
- */
-function refresher_slack()
-{
-    global $cfg_user_agent, $cfg_slack_token;
-
-    $dbr = db_init();
-    if (!$dbr) {
-        dp("ERR; R100\n");
-        return false;
-    }
-
-    $options = array(
-        'http' => array(
-            'method' => 'GET',
-            'header' => array(
-                'Host: slack.com',
-                'User-Agent: ' . $cfg_user_agent,
-            ),
-        ),
-    );
-    $url = 'https://slack.com/api/users.list?' . 'token=' . urlencode($cfg_slack_token);
-    $json = file_get_contents($url, false, stream_context_create($options));
-    $data = json_decode($json);
-
-    foreach ($data->{'members'} as $member) {
-
-        if ($member->{'deleted'} || $member->{'is_bot'} || $member->{'name'} == "slackbot") {
-            dp("SLACK: Deleting: @" . $member->{'name'} . "\n");
-            $std = $dbr->prepare('DELETE FROM account WHERE slack_id = :slack_id');
-            $std->bindValue(':slack_id', $member->{'id'});
-            if (!$std->execute()) {
-                dp("ERR; R101\n");
-                return false;
-            }
-            continue;
-        }
-
-        $stm = $dbr->prepare('SELECT * FROM account WHERE slack_id = :slack_id');
-        $stm->bindValue(':slack_id', $member->{'id'});
-        if (!$stm->execute()) {
-            continue;
-        }
-        $row = $stm->fetch();
-
-        if (!$row) {
-            dp("SLACK: New user: @" . $member->{'name'} . "\n");
-            $code = strtoupper(krand(10));
-            $sti = $dbr->prepare(
-                'INSERT INTO account (slack_id, auth_code, created_at) VALUES (:slack_id, :auth_code, :created_at)'
-            );
-            $sti->bindValue(':slack_id', $member->{'id'});
-            $sti->bindValue(':auth_code', $code);
-            $sti->bindValue(':created_at', time());
-            if (!$sti->execute()) {
-                dp("ERR; R102\n");
-                return false;
-            }
-        }
-
-        $stu = $dbr->prepare(
-            'UPDATE account 
-            SET slack_username = :slack_username, slack_realname = :slack_realname 
-            WHERE slack_id = :slack_id'
-        );
-        $stu->bindValue(':slack_id', $member->{'id'});
-        $stu->bindValue(':slack_username', $member->{'name'});
-        $stu->bindValue(':slack_realname', $member->{'profile'}->{'real_name'});
-
-        if (!$stu->execute()) {
-            dp("ERR; R103\n");
-            return false;
-        }
-
-    }
-
-    return true;
-}
-
-/**
- * @deprecated
- */
-function refresher_characters()
-{
-    $dbr = db_init();
-    if (!$dbr) {
-        dp("ERR; R200\n");
-        return false;
-    }
-
-    $stm = $dbr->prepare('SELECT * from account WHERE character_id IS NOT NULL');
-    if (!$stm->execute()) {
-        dp("ERR; R201\n");
-        return false;
-    }
-
-    while ($row = $stm->fetch()) {
-        if ($row['updated_at'] > time() - 60 * 60 * 12) {
-            continue;
-        }
-        dp("EVE: Updating; " . $row['character_name'] . "\n");
-        pull_character($dbr, $row['character_id']);
-    }
-
-    return true;
-}
-
-/**
- * @deprecated
- */
-function refresher_reminders()
-{
-    global $cfg_url_base, $cfg_slack_admin;
-
-    $dbr = db_init();
-    if (!$dbr) {
-        dp("ERR; R300\n");
-        return false;
-    }
-
-    $stm = $dbr->prepare('SELECT * from account');
-    if (!$stm->execute()) {
-        dp("ERR; R301\n");
-        return false;
-    }
-    while ($row = $stm->fetch()) {
-        if ($row['character_id']) {
-        #if ($row['slack_realname'] != $row['character_name']) {
-            if (strpos($row['slack_realname'], $row['character_name']) === false) {
-                if ($row['name_started_at'] == 0) {
-                    dp(
-                        "REMINDER: New name mismatch detected: " . $row['slack_realname'] . " " .
-                        $row['character_name'] . "\n"
-                    );
-                    $stu = $dbr->prepare('UPDATE account SET name_started_at = :time WHERE slack_id = :slack_id');
-                    $stu->bindValue(':time', time());
-                    $stu->bindValue(':slack_id', $row['slack_id']);
-                    if (!$stu->execute()) {
-                        dp("ERR; R302\n");
-                    }
-                    $row['name_started_at'] = time();
-                }
-                if ($row['name_reminder_at'] < time() - 60 * 60 * 12) {
-                    dp("REMINDER: Notified name mismatch: @" . $row['slack_username'] . "\n");
-                    sendSlack(
-                        "Your Slack profile name does not match your eve character name. Please fix that: '" .
-                            $row['slack_realname'] . "' vs '" . $row['character_name'] . "'",
-                        "@" . $row['slack_username']
-                    );
-                    $stu = $dbr->prepare('UPDATE account SET name_reminder_at = :time WHERE slack_id = :slack_id');
-                    $stu->bindValue(':time', time());
-                    $stu->bindValue(':slack_id', $row['slack_id']);
-                    if (!$stu->execute()) {
-                        dp("ERR; R303\n");
-                    }
-                    if ($row['name_started_at'] < time() - 60 * 60 * 72 &&
-                        $row['name_delete_reminder_at'] < time() - 60 * 60 * 24
-                    ) {
-                        dp("REMINDER: Notified name mismatch for deletion: @" . $row['slack_username'] . "\n");
-                        sendSlack(
-                            'DELETE (wrong name): @' . $row['slack_username'] . ' -- ' .
-                                $row['slack_realname'] . ' != ' . $row['character_name'],
-                            $cfg_slack_admin
-                        );
-                        $stu = $dbr->prepare(
-                            'UPDATE account SET name_delete_reminder_at = :time WHERE slack_id = :slack_id'
-                        );
-                        $stu->bindValue(':time', time());
-                        $stu->bindValue(':slack_id', $row['slack_id']);
-                        if (!$stu->execute()) {
-                            dp("ERR; R304\n");
-                        }
-                    }
-                }
-            } else {
-                $stu = $dbr->prepare('UPDATE account SET name_started_at = :time WHERE slack_id = :slack_id');
-                $stu->bindValue(':time', 0);
-                $stu->bindValue(':slack_id', $row['slack_id']);
-                if (!$stu->execute()) {
-                    dp("ERR; R305\n");
-                }
-            }
-
-            if (!hasSlackPermission($row['core_groups'])) {
-                if ($row['left_started_at'] == 0) {
-                    dp("REMINDER: New left detected: @" . $row['slack_username'] . "\n");
-                    $stu = $dbr->prepare('UPDATE account SET left_started_at = :time WHERE slack_id = :slack_id');
-                    $stu->bindValue(':time', time());
-                    $stu->bindValue(':slack_id', $row['slack_id']);
-                    if (!$stu->execute()) {
-                        dp("ERR; R306\n");
-                    }
-                    $row['left_started_at'] = time();
-                }
-                if ($row['left_reminder_at'] < time() - 60 * 60 * 12) {
-                    dp("REMINDER: Notified left: @" . $row['slack_username'] . "\n");
-                    sendSlack(
-                        'It seems you are no longer blue to Brave. Say your goodbye, you will be kicked soon.',
-                        "@" . $row['slack_username']
-                    );
-                    $stu = $dbr->prepare('UPDATE account SET left_reminder_at = :time WHERE slack_id = :slack_id');
-                    $stu->bindValue(':time', time());
-                    $stu->bindValue(':slack_id', $row['slack_id']);
-                    if (!$stu->execute()) {
-                        dp("ERR; R307\n");
-                    }
-                    if ($row['left_started_at'] < time() - 60 * 60 * 72 &&
-                        $row['left_delete_reminder_at'] < time() - 60 * 60 * 24
-                    ) {
-                        dp("REMINDER: Notified left for deletion: @" . $row['slack_username'] . "\n");
-                        sendSlack(
-                            'DELETE (no verification): @' . $row['slack_username'] . ' -- ' . $row['slack_realname'],
-                            $cfg_slack_admin
-                        );
-                        $stu = $dbr->prepare(
-                            'UPDATE account SET left_delete_reminder_at = :time WHERE slack_id = :slack_id'
-                        );
-                        $stu->bindValue(':time', time());
-                        $stu->bindValue(':slack_id', $row['slack_id']);
-                        if (!$stu->execute()) {
-                            dp("ERR; R308\n");
-                        }
-                    }
-                }
-            } else {
-                $stu = $dbr->prepare('UPDATE account SET left_started_at = :time WHERE slack_id = :slack_id');
-                $stu->bindValue(':time', 0);
-                $stu->bindValue(':slack_id', $row['slack_id']);
-                if (!$stu->execute()) {
-                    dp("ERR; R309\n");
-                }
-            }
-
-        } else {
-
-            if ($row['verify_reminder_at'] < time() - 60 * 60 * 6) {
-                dp("REMINDER: Notified verify: @" . $row['slack_username'] . "\n");
-                sendSlack(
-                    'You need to verify your account. Please visit ' . $cfg_url_base .
-                        ' and enter the following code: ' . $row['auth_code'],
-                    "@" . $row['slack_username']
-                );
-                $stu = $dbr->prepare('UPDATE account SET verify_reminder_at = :time WHERE slack_id = :slack_id');
-                $stu->bindValue(':time', time());
-                $stu->bindValue(':slack_id', $row['slack_id']);
-                if (!$stu->execute()) {
-                    dp("ERR; R310\n");
-                }
-                if ($row['created_at'] < time() - 60 * 60 * 72 &&
-                    $row['verify_delete_reminder_at'] < time() - 60 * 60 * 24
-                ) {
-                    dp("REMINDER: Notified verify for deletion: @" . $row['slack_username'] . "\n");
-                    sendSlack(
-                        'DELETE (no verification): @' . $row['slack_username'] . ' ' . $row['slack_realname'],
-                        $cfg_slack_admin
-                    );
-                    $stu = $dbr->prepare(
-                        'UPDATE account SET verify_delete_reminder_at = :time WHERE slack_id = :slack_id'
-                    );
-                    $stu->bindValue(':time', time());
-                    $stu->bindValue(':slack_id', $row['slack_id']);
-                    if (!$stu->execute()) {
-                        dp("ERR; R311\n");
-                    }
-                }
-            }
-
-        }
-    }
-
-    return true;
-}
-
 function hasSlackPermission($groups)
 {
     if (strpos($groups, 'family') === false && strpos($groups, 'member') === false) {
@@ -893,3 +578,5 @@ function hasSlackPermission($groups)
 
     return true;
 }
+
+?>

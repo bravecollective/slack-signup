@@ -17,6 +17,8 @@ function update() {
                 $('#inviteComplete').prop("hidden", false);
                 $('#signupComplete').prop("hidden", false);
                 $('#verifyComplete').prop("hidden", false);
+                $('#linkedCharacter').text(json['linked_character']['character_name']);
+                $('#linkedCharacter').attr("href", json['linked_character']['character_link']);
             } else {
                 if (json['invite_locked']) {
                     $('#inviteLocked').prop("hidden", false);
@@ -73,31 +75,6 @@ function invite(nonce, mail) {
             $('#inviteLocked').prop("hidden", false);
             signupClean();
             $('#signupPending').prop("hidden", false);
-        },
-    });
-}
-
-function verify(nonce, code) {
-    code = code.trim();
-    if (code === "") {
-        return;
-    }
-
-    $.ajax({
-        async: true,
-        url: "verify.php?n=" + nonce + "&code=" + code,
-        error: function () {
-            verifyClean();
-            $('#verifyFailed').prop("hidden", false);
-            $('#verifyPending').prop("hidden", false);
-        },
-        success: function () {
-            inviteClean();
-            $('#inviteComplete').prop("hidden", false);
-            signupClean();
-            $('#signupComplete').prop("hidden", false);
-            verifyClean();
-            $('#verifyComplete').prop("hidden", false);
         },
     });
 }

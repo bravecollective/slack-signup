@@ -21,4 +21,5 @@ if (!$dbr) {
 
 $data['verify_completed'] = isVerifyCompleted($dbr, $_SESSION['character_id']);
 $data['invite_locked'] = isInviteLocked($dbr, $_SESSION['character_id']);
+$data['linked_character'] = getLinkedCharacter($dbr, $_SESSION['character_id']);
 echo json_encode($data);

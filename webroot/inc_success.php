@@ -102,21 +102,21 @@
                     </div>
                     <div id="verifyComplete" hidden>
                         <p style="text-align:center;font-size:120%;" class="text-success">
-                            You have verified your account!
+                            Your account has been verified! 
+                        </p>
+                        <p style="text-align:center;" class="text-success">
+                            Your Account is Currently Linked to: <a id="linkedCharacter" href=""></a>
+                        </p>
+                        <p style="text-align:center;font-size:80%;">
+                            If for whatever reason you need to remove this character from your Core account (ie. Character Transfer or Deletion), you MUST request an invite on another character from your Core account, using the same email, BEFORE the removal occurs. Failure to do this will lead to your slack account being locked.
                         </p>
                     </div>
                     <div id="verifyPending" hidden>
                         <p style="text-align:center;">
-                            A few hours after signing up, you will receive a message asking to <b>verify</b> your
-                            account.<br>
-                            <br>
-                            <input id="textCode" placeholder="Verification Code" type="text">
-                            <button type="submit" class="btn btn-primary btn-sm"
-                                    onClick="verify('<?php echo $_SESSION['nonce']; ?>', $('#textCode').val());">Verify
-                            </button>
+                            Your account has not yet been verified. This is an automated process that should happen within 24 hours of you accepting your invite.
                         </p>
-                        <p style="font-size:80%;">
-                            Failing to verify your account, will get you <b>booted</b> from slack!<br>
+                        <p style="text-align:center;font-size:80%;">
+                            If your account hasn't been verified within 48 hours of you accepting your invite, or if you receive a notice of removal, contact a Slack Admin ASAP. 
                         </p>
                     </div>
                 </div>
