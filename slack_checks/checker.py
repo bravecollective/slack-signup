@@ -45,6 +45,54 @@ if Path(dataFile(configPathOverride, "/config") + "/config.ini").is_file():
     slackInfo = config["Slack"]
     debugMode = config.getboolean("Slack", "Debug")
     
+    ############################
+    #  Enviromental Overrides  #
+    ############################
+    
+    #Database
+    if os.environ.get("SLACKCORE_DB_SERVER") != None:
+        databaseInfo["DatabaseServer"] = os.environ.get("SLACKCORE_DB_SERVER")
+
+    if os.environ.get("SLACKCORE_DB_PORT") != None:
+        databaseInfo["DatabasePort"] = os.environ.get("SLACKCORE_DB_PORT")
+
+    if os.environ.get("SLACKCORE_DB_USERNAME") != None:
+        databaseInfo["DatabaseUsername"] = os.environ.get("SLACKCORE_DB_USERNAME")
+
+    if os.environ.get("SLACKCORE_DB_PASSWORD") != None:
+        databaseInfo["DatabasePassword"] = os.environ.get("SLACKCORE_DB_PASSWORD")
+
+    if os.environ.get("SLACKCORE_DB_DBNAME") != None:
+        databaseInfo["DatabaseName"] = os.environ.get("SLACKCORE_DB_DBNAME")
+    
+    #Core
+    if os.environ.get("SLACKCORE_CORE_URL") != None:
+        coreInfo["CoreURL"] = os.environ.get("SLACKCORE_CORE_URL")
+
+    if os.environ.get("SLACKCORE_CORE_ID") != None:
+        coreInfo["AppID"] = os.environ.get("SLACKCORE_CORE_ID")
+
+    if os.environ.get("SLACKCORE_CORE_SECRET") != None:
+        coreInfo["AppSecret"] = os.environ.get("SLACKCORE_CORE_SECRET")
+    
+    #Slack
+    if os.environ.get("SLACKCORE_NOTIFICATION_CHANNEL") != None:
+        slackInfo["NotificationChannel"] = os.environ.get("SLACKCORE_NOTIFICATION_CHANNEL")
+    
+    if os.environ.get("SLACKCORE_APP_TOKEN") != None:
+        slackInfo["AppToken"] = os.environ.get("SLACKCORE_APP_TOKEN")
+    
+    if os.environ.get("SLACKCORE_BOT_TOKEN") != None:
+        slackInfo["BotToken"] = os.environ.get("SLACKCORE_BOT_TOKEN")
+        
+    #Debug Mode
+    if os.environ.get("SLACKCORE_DEBUG_MODE") != None:
+        booleanInterpreters = {"yes": True, "true": True, 1: True, "1": True, "no": False, "false": False, 0: False, "0": False}
+    
+        debugMode = booleanInterpreters[os.environ.get("SLACKCORE_DEBUG_MODE").lower()]
+    
+
+
 else:
     raise Warning("No Configuration File Found!")
 
