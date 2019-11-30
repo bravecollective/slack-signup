@@ -1,5 +1,5 @@
 /.idea
-/webroot/config.php
 /slack_checks/.venv
 /slack_checks/.env
 /slack_checks/removedCharacters.txt
+/web_app/webroot/config.php
