@@ -1,6 +1,17 @@
+# IDE
 /.idea
+
+# web app
+/vendor/
+/web_app/.env
+/web_app/vendor/
+
+# python script
 /slack_checks/.venv
 /slack_checks/.env
 /slack_checks/removedCharacters.txt
-/web_app/.env
-/web_app/vendor/
+
+# Elastic Beanstalk Files
+.elasticbeanstalk/*
+!.elasticbeanstalk/*.cfg.yml
+!.elasticbeanstalk/*.global.yml

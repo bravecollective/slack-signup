@@ -1,0 +1,14 @@
+{
+    "name": "bravecollective/slack-signup-beanstalk",
+    "type": "project",
+    "license": "MIT",
+    "description": "",
+    "require": {
+        "php": "^7.2"
+    },
+    "scripts": {
+       "post-install-cmd": [
+            "./deploy.sh"
+        ]
+    }
+}
