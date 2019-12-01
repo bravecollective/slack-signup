@@ -2,4 +2,5 @@
 /slack_checks/.venv
 /slack_checks/.env
 /slack_checks/removedCharacters.txt
-/web_app/webroot/config.php
+/web_app/.env
+/web_app/vendor/
