@@ -361,8 +361,13 @@ def checkCharacters():
                         try:
                             slackBot.chat_postMessage(channel=slackInfo["NotificationChannel"], text=toPostToAdmins, link_names="true")
                             
-                            dmChannel = slackBot.im_open(user=slackCharacters[characters]["ID"])
-                            if dmChannel["ok"]:
+                            try:
+                                dmChannel = slackBot.im_open(user=slackCharacters[characters]["ID"])
+                                dmIsGood = True
+                            except:
+                                dmIsGood = False
+                                
+                            if dmIsGood:
                                 toPostToUser = removalNotification.format(user_id=slackCharacters[characters]["ID"])
                                 slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
                                 
