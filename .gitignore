@@ -5,6 +5,7 @@
 /vendor/
 /web_app/.env
 /web_app/vendor/
+/web_app/logs/*.log
 
 # python script
 /slack_checks/.venv

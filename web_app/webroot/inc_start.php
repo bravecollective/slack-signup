@@ -2,7 +2,7 @@
 
 <div class="container">
     <div class="jumbotron">
-        <a href="https://wiki.braveineve.com" target="_blank"><img src="img/brave.png" class="pull-right"></a>
+        <a href="https://wiki.bravecollective.com" target="_blank"><img src="img/brave.png" class="pull-right"></a>
         <h1>BRAVE Slack</h1>
         <br>
         <p>

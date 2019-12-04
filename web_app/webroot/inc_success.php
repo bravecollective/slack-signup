@@ -5,7 +5,7 @@
 
 <div class="container">
     <div class="jumbotron">
-        <a href="https://wiki.braveineve.com" target="_blank"><img src="img/brave.png" class="pull-right" alt=""></a>
+        <a href="https://wiki.bravecollective.com" target="_blank"><img src="img/brave.png" class="pull-right" alt=""></a>
         <h1>Welcome!</h1>
         <p>
             Hi <?php echo htmlentities($_SESSION['character_name']); ?>,<br>
