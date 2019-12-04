@@ -16,7 +16,7 @@ PHP >=7.2, MySQL and a web server.
 
 - Create a new [Neucore](https://github.com/bravecollective/brvneucore) app
 - Add groups: member, family
-- Add roles: app-groups
+- Add roles: app-groups, app-chars
 
 #### Slack App
 

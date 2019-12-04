@@ -14,6 +14,23 @@ Neucore-Slack-Link is a proprietary bot used to kick people from Slack who shoul
   * Plus a Slack app (with bot) with the appropriate roles as listed in `config.ini`
   * Add the bot to the "NotificationChannel" from the config
   
+#### Quick setup for development
+```sh
+# init
+$ virtualenv -p python3 .venv
+$ source .venv/bin/activate
+$ pip install requests
+$ pip install mysql-connector-python
+$ pip install slackclient
+$ deactivate
+
+# run
+$ source .venv/bin/activate
+$ source ./.env
+$ python3 checker.py
+$ deactivate
+```
+
 ## Running the Checker
 * Once you've got `config.ini` setup, just run `checker.py`  
   You can also use environment variables instead of modifying config.ini. For dev env copy .env.dist to 
