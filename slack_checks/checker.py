@@ -111,6 +111,14 @@ Hello <@{user_id}>, it seems you aren't supposed to be here anymore. You may've 
 
 Whatever the reason, you're about to be kicked from Slack. Bye! 
 """
+
+emailNotification = """
+
+*ADDENDUM: You were marked for removal because your current Slack email does not match the one you signed up with. Please follow the below instructions ASAP to avoid being removed.*
+
+1. Login to https://slack.bravecollective.com/ on your *Main Character*
+2. In the far left box, request an invite using the email currently tied to your Slack Account. You can find this by selecting `Profile & account` from the dropdown in the upper-left corner of Slack.
+"""
     
 def checkCharacters():
     try:
@@ -389,6 +397,10 @@ def checkCharacters():
                                 
                             if dmIsGood:
                                 toPostToUser = removalNotification.format(user_id=slackCharacters[characters]["ID"])
+                                
+                                if slackCharacters[characters]["Reason"] == "No Matching Email":
+                                    toPostToUser += emailNotification
+                                
                                 slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
                                 
                             break
