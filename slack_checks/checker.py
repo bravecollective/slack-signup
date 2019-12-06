@@ -132,10 +132,6 @@ def checkCharacters():
         
         sq1Database = DatabaseConnector.connect(user=databaseInfo["DatabaseUsername"], password=databaseInfo["DatabasePassword"], host=databaseInfo["DatabaseServer"] , port=int(databaseInfo["DatabasePort"]), database=databaseInfo["DatabaseName"])
 
-        checkCursor = sq1Database.cursor(buffered=True)
-        secondaryCheckCursor = sq1Database.cursor(buffered=True)
-        updateCursor = sq1Database.cursor(buffered=True)
-
         startTime = time.perf_counter()
         listOfTimes.append(startTime)
         
@@ -182,10 +178,12 @@ def checkCharacters():
         ###############################
         #  Syncs up duplicate emails  #
         ###############################
+        checkCursor = sq1Database.cursor(buffered=True)
         checkQuery = ("SELECT * FROM invite")
         checkCursor.execute(checkQuery)
         
         for (character_id, character_name, slack_email, email_history, invited_at, account_slack_id, account_status) in checkCursor:
+            secondaryCheckCursor = sq1Database.cursor(buffered=True)
             secondaryCheckQuery = ("SELECT * FROM invite WHERE email=%s")
             secondaryCheckCursor.execute(secondaryCheckQuery, (slack_email,))
             
@@ -204,14 +202,19 @@ def checkCharacters():
                         validID = secondary_account_slack_id
                         validAccountStatus = secondary_account_status
                         
+            secondaryCheckCursor.close()
+
             if checkThisEmail and accountIDsToCompare.count(accountIDsToCompare[0]) != len(accountIDsToCompare):
                 if not debugMode:
+                    updateCursor = sq1Database.cursor(buffered=True)
                     updateStatement = ("UPDATE invite SET slack_id=%s, account_status=%s WHERE email=%s")
                     updateCursor.execute(updateStatement, (validID,validAccountStatus,slack_email))
                     sq1Database.commit()
+                    updateCursor.close()
                 
                 syncedEmails += 1
-                    
+                        
+        checkCursor.close()
         
         timeChecks["Time to Sync Duplicate Emails"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Sync Duplicate Emails"])
@@ -222,7 +225,8 @@ def checkCharacters():
         for characters in slackCharacters:
             idCheckExists = False
             emailCheckExists = False
-        
+            
+            checkCursor = sq1Database.cursor(buffered=True)
             checkQuery = ("SELECT * FROM invite WHERE slack_id=%s")
             checkCursor.execute(checkQuery, (slackCharacters[characters]["ID"],))
             
@@ -241,9 +245,12 @@ def checkCharacters():
                     if account_status != slackCharacters[characters]["Account Status"]:
                         
                         if not debugMode:
+                            updateCursor = sq1Database.cursor(buffered=True)
                             updateStatement = ("UPDATE invite SET account_status=%s WHERE slack_id=%s")
                             updateCursor.execute(updateStatement, (slackCharacters[characters]["Account Status"],slackCharacters[characters]["ID"]))
                             sq1Database.commit()
+                            
+                            updateCursor.close()
                         
                         if slackCharacters[characters]["Account Status"] == "Active":
                             reactivatedAccounts += 1
@@ -252,8 +259,10 @@ def checkCharacters():
                             
                     duplicateRowTimestamps.append(invited_at)
                     
+            checkCursor.close()
             
             if not idCheckExists:
+                secondaryCheckCursor = sq1Database.cursor(buffered=True)
                 secondaryCheckQuery = ("SELECT * FROM invite WHERE email=%s")
                 secondaryCheckCursor.execute(secondaryCheckQuery, (slackCharacters[characters]["Email"],))
                 
@@ -270,14 +279,19 @@ def checkCharacters():
                         slackCharacters[characters]["Main Name"] = character_name                    
                         
                         if not debugMode:
+                            updateCursor = sq1Database.cursor(buffered=True)
                             updateStatement = ("UPDATE invite SET slack_id=%s, account_status=%s WHERE email=%s")
                             updateCursor.execute(updateStatement, (slackCharacters[characters]["ID"],slackCharacters[characters]["Account Status"],slackCharacters[characters]["Email"]))
                             sq1Database.commit()
                             
+                            updateCursor.close()
+                            
                         newlyLinkedAccounts += 1
                         
                         duplicateRowTimestamps.append(invited_at)
-                    
+                
+                secondaryCheckCursor.close()
+                
                 if not emailCheckExists and slackCharacters[characters]["Account Status"] != "Terminated":
                     slackCharacters[characters]["To Remove"] = True
                     slackCharacters[characters]["Reason"] = "No Matching Email"
@@ -291,12 +305,16 @@ def checkCharacters():
         #################################
         
         if not debugMode:
+            checkCursor = sq1Database.cursor(buffered=True)
             checkQuery = ("SELECT * FROM invite")
             checkCursor.execute(checkQuery)
             
             for (character_id, character_name, slack_email, email_history, invited_at, account_slack_id, account_status) in checkCursor:
                 if account_slack_id == None or account_slack_id == "" or account_slack_id == "NULL":
                     orphanedInvites += 1
+                    
+            checkCursor.close()
+                    
         else:
             orphanedInvites = "Unknown"
         
@@ -344,6 +362,8 @@ def checkCharacters():
                     else:
                         print("An error occured while checking the character " + str(slackCharacters[characters]["Main Character ID"]) + "... Trying again in a sec.")
                         time.sleep(1)
+                        
+                time.sleep(0.1)
         
         timeChecks["Time to Check Accounts Against Core"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Check Accounts Against Core"])        
