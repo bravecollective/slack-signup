@@ -376,8 +376,9 @@ function invite($dbr, $mail)
  */
 function isVerifyCompleted($dbr, $character_id)
 {
-    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND slack_id IS NOT NULL');
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND account_status = :account_status AND slack_id IS NOT NULL');
     $stm->bindValue(':character_id', $character_id);
+    $stm->bindValue(':account_status', "Active");
     if (!$stm->execute()) {
         return false;
     }
@@ -392,8 +393,9 @@ function isVerifyCompleted($dbr, $character_id)
  */
 function getLinkedCharacter($dbr, $character_id) {
 
-    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND slack_id IS NOT NULL');
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE character_id = :character_id AND account_status = :account_status AND slack_id IS NOT NULL');
     $stm->bindValue(':character_id', $character_id);
+    $stm->bindValue(':account_status', "Active");
     if (!$stm->execute()) {
         return false;
     }
@@ -406,8 +408,9 @@ function getLinkedCharacter($dbr, $character_id) {
 
     $email_to_check = $invite_data[0]["email"];
 
-    $stm = $dbr->prepare('SELECT * FROM invite WHERE email = :email AND slack_id IS NOT NULL');
+    $stm = $dbr->prepare('SELECT * FROM invite WHERE email = :email AND account_status = :account_status AND slack_id IS NOT NULL');
     $stm->bindValue(':email', $email_to_check);
+    $stm->bindValue(':account_status', "Active");
     if (!$stm->execute()) {
         return false;
     }
