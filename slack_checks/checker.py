@@ -387,7 +387,7 @@ def checkCharacters():
                     
                     while True:
                         try:
-                            slackBot.chat_postMessage(channel=slackInfo["NotificationChannel"], text=toPostToAdmins, link_names="true")
+                            #slackBot.chat_postMessage(channel=slackInfo["NotificationChannel"], text=toPostToAdmins, link_names="true")
                             
                             try:
                                 dmChannel = slackBot.im_open(user=slackCharacters[characters]["ID"])
