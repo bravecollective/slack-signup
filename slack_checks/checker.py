@@ -401,7 +401,7 @@ def checkCharacters():
                                 if slackCharacters[characters]["Reason"] == "No Matching Email":
                                     toPostToUser += emailNotification
                                 
-                                slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
+                                #slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
                                 
                             break
                         except:
