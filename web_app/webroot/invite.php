@@ -16,11 +16,11 @@ if (!$dbr) {
     return;
 }
 
-if (!isset($_GET['mail']) || !filter_var($_GET['mail'], FILTER_VALIDATE_EMAIL)) {
+if (!isset($_POST['mail']) || !filter_var($_POST['mail'], FILTER_VALIDATE_EMAIL)) {
     http_response_code(500);
     return;
 }
-$email = $_GET['mail'];
+$email = $_POST['mail'];
 
 if (!invite($dbr, $email)) {
     http_response_code(500);

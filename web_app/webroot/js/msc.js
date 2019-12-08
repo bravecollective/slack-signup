@@ -61,7 +61,9 @@ function invite(nonce, mail) {
 
     $.ajax({
         async: true,
-        url: "invite.php?n=" + nonce + "&mail=" + mail,
+        url: "invite.php?n=" + nonce,
+        method: 'POST',
+        data: { 'mail': mail },
         error: function () {
             inviteClean();
             $('#inviteFailed').prop("hidden", false);
