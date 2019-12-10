@@ -322,10 +322,7 @@ def checkCharacters():
                     orphanedInvites += 1
                     
             checkCursor.close()
-                    
-        else:
-            orphanedInvites = "Unknown"
-        
+
         timeChecks["Time to Fetch Orphaned Invites"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Fetch Orphaned Invites"])
         
@@ -407,12 +404,12 @@ def checkCharacters():
                         except:
                             print("Failed to send slack message. Trying again in a sec.")
                             time.sleep(1)
-        else:
-            with open("removedCharacters.txt", "w") as removalFile:
-                for characters in slackCharacters:
-                    if slackCharacters[characters]["To Remove"] and slackCharacters[characters]["Account Status"] != "Terminated":
-                        removalFile.write(slackCharacters[characters]["Display Name"] + " (" + slackCharacters[characters]["ID"] + ") - " + slackCharacters[characters]["Reason"] + "\n")
-        
+
+        with open("removedCharacters.txt", "w") as removalFile:
+            for characters in slackCharacters:
+                if slackCharacters[characters]["To Remove"] and slackCharacters[characters]["Account Status"] != "Terminated":
+                    removalFile.write(slackCharacters[characters]["Display Name"] + " (" + slackCharacters[characters]["ID"] + ") - " + slackCharacters[characters]["Reason"] + "\n")
+
         timeChecks["Time To Send Messages"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time To Send Messages"])
         
