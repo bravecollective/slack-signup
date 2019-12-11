@@ -368,7 +368,7 @@ def checkCharacters():
                         print("An error occured while checking the character " + str(slackCharacters[characters]["Main Character ID"]) + "... Trying again in a sec.")
                         time.sleep(1)
                         
-                time.sleep(0.1)
+                time.sleep(0.2)
         
         timeChecks["Time to Check Accounts Against Core"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Check Accounts Against Core"])        
