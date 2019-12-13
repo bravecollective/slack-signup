@@ -367,8 +367,9 @@ def checkCharacters():
                     else:
                         print("An error occured while checking the character " + str(slackCharacters[characters]["Main Character ID"]) + "... Trying again in a sec.")
                         time.sleep(1)
-                        
-                time.sleep(0.2)
+
+                # reduces CPU usage of Core server
+                time.sleep(0.3)
         
         timeChecks["Time to Check Accounts Against Core"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Check Accounts Against Core"])        
@@ -384,7 +385,7 @@ def checkCharacters():
                     
                     while True:
                         try:
-                            #slackBot.chat_postMessage(channel=slackInfo["NotificationChannel"], text=toPostToAdmins, link_names="true")
+                            slackBot.chat_postMessage(channel=slackInfo["NotificationChannel"], text=toPostToAdmins, link_names="true")
                             
                             try:
                                 dmChannel = slackBot.im_open(user=slackCharacters[characters]["ID"])
@@ -398,7 +399,7 @@ def checkCharacters():
                                 if slackCharacters[characters]["Reason"] == "No Matching Email":
                                     toPostToUser += emailNotification
                                 
-                                #slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
+                                slackBot.chat_postMessage(channel=dmChannel["channel"]["id"], text=toPostToUser, link_names="true")
                                 
                             break
                         except:
