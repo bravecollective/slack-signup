@@ -536,7 +536,7 @@ function core_groups($full_character_id_array)
 
 function hasSlackPermission($groups)
 {
-    if (strpos($groups, 'family') === false && strpos($groups, 'member') === false) {
+    if (strpos($groups, 'member') === false) {
         return false;
     }
 
