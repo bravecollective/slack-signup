@@ -217,7 +217,8 @@ function sso_update()
 
     if (!$person = pull_character($_SESSION['character_id'])) {
         $_SESSION['error_code'] = 60;
-        $_SESSION['error_message'] = 'Failed to update character.';
+        $_SESSION['error_message'] = 'Failed to update character. Is ESI down? ' .
+            'Also make sure you have a Core account and groups are listed on the right side.';
         return false;
     }
     $_SESSION = array_merge($_SESSION, $person);
