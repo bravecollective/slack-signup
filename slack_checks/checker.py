@@ -369,7 +369,7 @@ def checkCharacters():
                         time.sleep(1)
 
                 # reduces CPU usage of Core server
-                time.sleep(0.3)
+                time.sleep(0.4)
         
         timeChecks["Time to Check Accounts Against Core"] = time.perf_counter() - sum(listOfTimes)
         listOfTimes.append(timeChecks["Time to Check Accounts Against Core"])        
