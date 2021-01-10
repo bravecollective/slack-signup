@@ -1,3 +1,7 @@
+
+Replaced with https://github.com/bravecollective/neucore-plugin-slack and
+https://github.com/bravecollective/Neucore-Slack-Link
+
 # Slack SignUp and Checker
 
 ## Slack SignUp Web-App
