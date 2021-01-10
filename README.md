@@ -20,9 +20,7 @@ PHP >=7.2, MySQL and a web server.
 
 #### Slack App
 
-- Create a Slack app at https://api.slack.com/apps
-- Add permission: `chat:write:bot`
-- Install app to workspace
+This is now a git submodule from https://github.com/bravecollective/Neucore-Slack-Link, see there.
 
 ### Install
 

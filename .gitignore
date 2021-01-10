@@ -7,11 +7,6 @@
 /web_app/vendor/
 /web_app/logs/*.log
 
-# python script
-/slack_checks/.venv
-/slack_checks/.env
-/slack_checks/removedCharacters.txt
-
 # Elastic Beanstalk Files
 .elasticbeanstalk/*
 !.elasticbeanstalk/*.cfg.yml

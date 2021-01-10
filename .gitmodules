@@ -1,0 +1,3 @@
+[submodule "slack_checks"]
+	path = slack_checks
+	url = https://github.com/bravecollective/Neucore-Slack-Link.git
